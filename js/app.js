@@ -101,6 +101,37 @@ function provenanceLegend() {
 }
 
 const matchById = new Map(MATCHES.map((match) => [match.id, match]));
+
+// Los enlaces guardados pueden traer un prefijo anterior en el hash. La URL
+// pública siempre usa `partido-` y se empareja por el número final del ID,
+// sin depender del nombre del prefijo.
+const toPublicId = (id) => {
+  const value = String(id ?? "");
+  const numeric = value.match(/\d+$/)?.[0];
+  return numeric ? `partido-${numeric}` : value.replace(/^[^-]+-/, "partido-");
+};
+
+function matchForHashId(id) {
+  if (!id) return null;
+  if (matchById.has(id)) return matchById.get(id);
+  const numeric = String(id).match(/\d+$/)?.[0];
+  if (!numeric) return null;
+  for (const [key, match] of matchById) {
+    if (key.endsWith(numeric)) return match;
+  }
+  return null;
+}
+
+// Los datos generados pueden traer escudos remotos; el sitio siempre sirve los
+// archivos locales para no depender de peticiones externas.
+function localCrest(url) {
+  const value = String(url ?? "");
+  const remote = value.match(/teamlogos\/soccer\/\d+\/([^"?#]+)/i);
+  if (remote) return `./css/crests/${String(remote[1]).replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
+  if (/^https?:\/\//i.test(value)) return "./css/escudo.svg";
+  return value;
+}
+
 const analyses = new Map();
 const fullAnalyses = new Map();
 const modelReady = Boolean(MODEL_REPORT?.headline?.n);
@@ -338,7 +369,7 @@ function filteredMatches({ ignoreConfidence = false } = {}) {
 
 function crest(team, size = "sm") {
   const logo = team.logo
-    ? `<img src="${escapeHtml(team.logo)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
+    ? `<img src="${escapeHtml(localCrest(team.logo))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
     : "";
   return `<span class="crest crest-${size}${logo ? " has-logo" : ""}" style="--c1:${escapeHtml(team.color || "#2457d6")};--c2:${escapeHtml(team.color2 || "#ffffff")}" aria-hidden="true">${logo}<span class="crest-abbr">${escapeHtml(team.abbr)}</span></span>`;
 }
@@ -1203,7 +1234,7 @@ function renderLeagueTable(a) {
     const isAway = (awayKey && key === awayKey) || entry.team === a.away.name;
     const initials = escapeHtml(String(entry.short || entry.team || "?").replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase());
     const logo = entry.logo
-      ? `<img src="${escapeHtml(entry.logo)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
+      ? `<img src="${escapeHtml(localCrest(entry.logo))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
       : "";
     return `
       <tr class="${isHome ? "is-home" : ""}${isAway ? " is-away" : ""}">
@@ -1847,7 +1878,7 @@ function renderHits(source = null) {
 
 function latentCrest(row) {
   const logo = row.logo
-    ? `<img src="${escapeHtml(row.logo)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
+    ? `<img src="${escapeHtml(localCrest(row.logo))}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
     : "";
   return `<span class="latent-crest${logo ? " has-logo" : ""}"><span class="latent-crest-abbr">${escapeHtml(row.short || "—")}</span>${logo}</span>`;
 }
@@ -3257,7 +3288,7 @@ function selectMatch(id, options = {}) {
   state.analysis = getFullAnalysis(id) || analysis;
   state.combo = [];
   if (options.updateHash !== false) {
-    const hash = `#/partido/${id}`;
+    const hash = `#/partido/${toPublicId(id)}`;
     if (location.hash !== hash) history.replaceState(null, "", hash);
   }
   document.title = PRODUCT_NAME;
@@ -3766,8 +3797,8 @@ function boot() {
     `;
   } else {
     const hashId = location.hash.match(/partido\/([^/?]+)/)?.[1];
-    const initial = MATCHES.some((match) => match.id === hashId) ? hashId : MATCHES[0].id;
-    selectMatch(initial, { updateHash: false, scroll: false });
+    const initial = matchForHashId(hashId) || MATCHES[0];
+    selectMatch(initial.id, { updateHash: Boolean(hashId), scroll: false });
   }
   if (location.hash === "#record") openRecord();
 
@@ -3795,7 +3826,8 @@ function boot() {
   window.addEventListener("resize", hideTooltip);
   window.addEventListener("hashchange", () => {
     const id = location.hash.match(/partido\/([^/?]+)/)?.[1];
-    if (id && id !== state.selectedId) selectMatch(id, { updateHash: false });
+    const match = matchForHashId(id);
+    if (match && match.id !== state.selectedId) selectMatch(match.id, { updateHash: true });
     if (location.hash === "#record") openRecord();
   });
   $("#league-select")?.addEventListener("change", (event) => {
