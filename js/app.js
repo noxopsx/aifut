@@ -3827,7 +3827,14 @@ function boot() {
   window.addEventListener("hashchange", () => {
     const id = location.hash.match(/partido\/([^/?]+)/)?.[1];
     const match = matchForHashId(id);
-    if (match && match.id !== state.selectedId) selectMatch(match.id, { updateHash: true });
+    if (match) {
+      if (match.id !== state.selectedId) {
+        selectMatch(match.id, { updateHash: true });
+      } else {
+        const publicHash = `#/partido/${toPublicId(match.id)}`;
+        if (location.hash !== publicHash) history.replaceState(null, "", publicHash);
+      }
+    }
     if (location.hash === "#record") openRecord();
   });
   $("#league-select")?.addEventListener("change", (event) => {
