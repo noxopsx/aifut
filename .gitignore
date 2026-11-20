@@ -11,8 +11,10 @@ dist/
 .env
 .env.*
 
-# Datos pesados y generados: se regeneran en el pipeline, no se publican
-data/
+# Datos pesados y generados: se regeneran en el pipeline, no se publican.
+# La barra inicial es clave: sin ella, Git ignora también js/data/ y el sitio
+# publicado se queda sin cartelera (solo aparece el encabezado AIFUT).
+/data/
 _respaldo_*/
 _probe.sqlite
 *.log
