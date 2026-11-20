@@ -1,0 +1,25 @@
+{
+  "name": "motor-nox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AIFUT · OX V1.0: pronósticos de fútbol con probabilidades claras",
+  "scripts": {
+    "start": "node server.js",
+    "build:static": "node scripts/build-static.mjs",
+    "crests:download": "node scripts/download-crests.mjs",
+    "crests:optimize": "powershell -ExecutionPolicy Bypass -File scripts/optimize-crests.ps1",
+    "actualizar": "node datos_live.mjs",
+    "actualizar:programado": "node datos_live.mjs --programado --min-horas 6 --min-minutos-dia 15",
+    "catalogo": "python -m pipeline.ingest_competitions",
+    "fixtures": "python -m pipeline.ingest_fixtures --window",
+    "cobertura": "python -m pipeline.ingest_fixtures --coverage",
+    "sync": "python -m pipeline.sync_operativo",
+    "apis:fdorg": "python -m pipeline.ingest_football_data_org",
+    "apis:faorg": "python -m pipeline.ingest_footballapi_org",
+    "test": "node test-model.mjs",
+    "test:fixtures": "python -m unittest pipeline.test_fixtures",
+    "test:encoding": "python -m unittest pipeline.test_encoding",
+    "test:apis": "python -m unittest pipeline.test_api_football pipeline.test_free_apis"
+  }
+}

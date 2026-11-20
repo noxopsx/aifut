@@ -1,0 +1,55 @@
+name: Actualizar datos AIFUT
+
+on:
+  schedule:
+    # Cada hora; GitHub ejecuta cron en modo "best effort".
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos-aifut
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Dependencias del pipeline
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Refrescar cartelera y fuentes
+        env:
+          APISPORTS_KEY: ${{ secrets.APISPORTS_KEY }}
+          FOOTBALLDATA_KEY: ${{ secrets.FOOTBALLDATA_KEY }}
+          FOOTBALLAPI_KEY: ${{ secrets.FOOTBALLAPI_KEY }}
+        run: |
+          node datos_live.mjs --programado --min-horas 6 --min-minutos-dia 15
+          python -m pipeline.sync_operativo --scheduled --force --no-catalog --manifest
+
+      - name: Publicar datos generados
+        run: |
+          git config user.name "AIFUT Bot"
+          git config user.email "aifut-bot@users.noreply.github.com"
+          git add js/data/
+          if git diff --cached --quiet; then
+            echo "Sin cambios en los datos."
+          else
+            git commit -m "Actualizar datos AIFUT"
+            git push origin HEAD:${{ github.ref_name }}
+          fi

@@ -1,0 +1,27 @@
+# Cache local, secretos y salida de publicación (nunca versionar)
+.cache/
+dist/
+*.lock
+
+# Claves de APIs (sólo en caché local privada; .cache/ ya las excluye)
+.cache/api_football/key.json
+.cache/api_football/usage.json
+.cache/football_data_org/key.json
+.cache/footballapi_org/key.json
+.env
+.env.*
+
+# Datos pesados y generados: se regeneran en el pipeline, no se publican
+data/
+_respaldo_*/
+_probe.sqlite
+*.log
+*.bak-*
+
+# Python
+__pycache__/
+*.pyc
+
+# Documentación de planeación local (no necesaria en el sitio público)
+PLAN_MOTOR_NOX_V2.docx
+PLAN_MOTOR_NOX_V2.pdf

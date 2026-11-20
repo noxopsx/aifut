@@ -1,0 +1,10 @@
+# Dependencias de la pipeline histórica MOTOR-NOX V1.0
+# La ingesta de alineaciones (ingest_lineups.py) usa solo la librería estándar.
+pandas>=2.2
+numpy>=1.26
+requests>=2.31
+pyarrow>=15.0
+# Sección 3: modelos tabulares y ensamble (sin redes neuronales)
+scikit-learn>=1.4
+scipy>=1.11
+joblib>=1.3

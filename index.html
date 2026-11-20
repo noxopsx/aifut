@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1e1b4b" />
+    <meta
+      name="description"
+      content="AIFUT: porcentajes claros para tus partidos de fútbol, con análisis detallado cuando lo necesites."
+    />
+    <title>AIFUT</title>
+    <link rel="preload" href="./css/fonts/plus-jakarta-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="./css/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%233b82f6'/%3E%3Cstop offset='100%25' stop-color='%237c3aed'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Ctext x='50%25' y='62%25' font-family='system-ui, -apple-system, sans-serif' font-weight='900' font-size='22' fill='%23ffffff' text-anchor='middle' letter-spacing='-1'%3EAI%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./css/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Partidos y filtros">
+        <div class="brand-row">
+          <a class="brand" href="#" aria-label="AIFUT, inicio">AI<span>FUT</span></a>
+          <button class="sidebar-close" id="sidebar-close" aria-label="Cerrar menú">×</button>
+        </div>
+        <p class="brand-sub">Pronósticos de fútbol</p>
+
+        <div class="sidebar-block">
+          <div class="section-head">
+            <span>Competición</span>
+            <span class="section-count" id="match-count">07</span>
+          </div>
+          <div class="chips" id="filters"></div>
+          <div class="league-filter" id="league-filter" hidden>
+            <label for="league-select">Liga</label>
+            <select id="league-select" aria-label="Filtrar por liga"></select>
+          </div>
+          <div class="confidence-filter">
+            <label for="confidence-select">Confianza 1X2</label>
+            <select id="confidence-select" aria-label="Filtrar por confianza del favorito" title="Filtra por la probabilidad máxima del favorito">
+              <option value="0">Todas</option>
+              <option value="0.7">≥ 70%</option>
+              <option value="0.8">≥ 80%</option>
+            </select>
+            <p class="confidence-hint" id="confidence-hint" hidden></p>
+          </div>
+        </div>
+
+        <div class="sidebar-block match-block">
+          <div class="section-head">
+            <span>Partidos</span>
+            <span class="section-count">Prepartido</span>
+          </div>
+          <label class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg>
+            <input id="search" type="search" placeholder="Buscar equipo" aria-label="Buscar equipo" autocomplete="off" />
+          </label>
+          <div class="match-list" id="match-list"></div>
+        </div>
+
+        <div class="sidebar-foot">
+          <div class="status-line"><span class="status-dot"></span> Listo <span id="model-version">OX</span></div>
+          <p id="sidebar-note">Pronósticos de fútbol. Uso personal y educativo.</p>
+        </div>
+      </aside>
+
+      <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="menu-btn" id="menu-btn" aria-label="Abrir lista de partidos" aria-controls="sidebar" aria-expanded="false">
+              <span></span><span></span><span></span>
+            </button>
+            <span class="topbar-brand" aria-hidden="true">AI<span>FUT</span></span>
+            <div class="breadcrumb" id="breadcrumb">Liga MX / Apertura 2026</div>
+          </div>
+          <div class="topbar-right">
+            <details class="topbar-more">
+              <summary aria-label="Más herramientas y ajustes">Más</summary>
+              <div class="topbar-more-menu">
+                <button class="ghost-btn refresh-btn" id="refresh-btn" type="button" hidden>Actualizar</button>
+                <button class="ghost-btn hits-btn" id="hits-btn" type="button" data-open="hits" hidden>
+                  <span class="hits-btn-label">Total de aciertos</span>
+                  <span class="hits-btn-value">—/—</span>
+                  <small class="hits-btn-rate">—</small>
+                </button>
+                <button class="ghost-btn latent-btn" id="latent-btn" type="button" data-open="latent" hidden>Equipos latentes</button>
+                <button class="ghost-btn precision-btn" id="precision-btn" type="button">Precisión</button>
+                <button class="demo-badge" id="demo-badge" type="button" title="Estado de los datos">
+                  <span class="demo-dot"></span> <span id="demo-badge-text">Datos de respaldo</span>
+                </button>
+                <button class="ghost-btn" id="engine-btn" hidden>OX V1.0</button>
+                <button class="ghost-btn" id="ve-btn" title="Cálculo VE" hidden>VE</button>
+                <button class="ghost-btn" id="methodology-btn" hidden>Cómo funciona</button>
+              </div>
+            </details>
+          </div>
+        </header>
+
+        <nav class="sport-bar" aria-label="Deporte">
+          <button type="button" class="sport-bar-tab is-active" aria-current="true">Fútbol</button>
+        </nav>
+
+        <section id="match-view" aria-live="polite"></section>
+
+        <footer class="page-footer">
+          <span>AIFUT · pronósticos de fútbol</span>
+          <span id="footer-data">Datos de respaldo · 2026</span>
+        </footer>
+      </main>
+    </div>
+
+    <div class="tooltip" id="tooltip" role="tooltip" aria-hidden="true"></div>
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+    <aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+      <div class="drawer-top">
+        <span class="drawer-eyebrow" id="drawer-eyebrow">Cálculo</span>
+        <button class="drawer-close" id="drawer-close" aria-label="Cerrar explicación">×</button>
+      </div>
+      <div id="drawer-content"></div>
+    </aside>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="modal-backdrop" id="validation-backdrop" hidden></div>
+    <section class="validation-modal" id="validation-modal" role="dialog" aria-modal="true" aria-labelledby="validation-title" hidden>
+      <header class="validation-top">
+        <div>
+          <span class="eyebrow">Muestra histórica · 1X2</span>
+          <h2 id="validation-title">Precisión de OX</h2>
+        </div>
+        <button class="drawer-close" id="validation-close" aria-label="Cerrar panel de precisión">×</button>
+      </header>
+      <div id="validation-content"></div>
+    </section>
+
+    <div class="modal-backdrop" id="latent-backdrop" hidden></div>
+    <section class="validation-modal latent-modal" id="latent-modal" role="dialog" aria-modal="true" aria-labelledby="latent-title" hidden>
+      <header class="validation-top">
+        <div>
+          <span class="eyebrow">Tercio medio · lectura de riesgo</span>
+          <h2 id="latent-title">Equipos latentes</h2>
+        </div>
+        <div class="modal-head-actions">
+          <button type="button" class="panel-info" data-explain="latent" aria-label="Cómo se calcula el índice de apoyo">i</button>
+          <button class="drawer-close" id="latent-close" aria-label="Cerrar equipos latentes">×</button>
+        </div>
+      </header>
+      <div id="latent-content"></div>
+    </section>
+
+    <div class="modal-backdrop" id="record-backdrop" hidden></div>
+    <section class="validation-modal" id="record-modal" role="dialog" aria-modal="true" aria-labelledby="record-title" hidden>
+      <header class="validation-top">
+        <div>
+          <span class="eyebrow">Registro verificable · 1X2</span>
+          <h2 id="record-title">Récord de OX</h2>
+        </div>
+        <button class="drawer-close" id="record-close" aria-label="Cerrar récord">×</button>
+      </header>
+      <div id="record-content"></div>
+    </section>
+
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
